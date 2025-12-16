@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Ticket #{{ ticket.id }} - {{ ticket.title }}</h4>
+            <span class="badge bg-{{ 'success' if ticket.status == 'Closed' else 'primary' }}">{{ ticket.status }}</span>
+        </div>
+        <div class="card-body">
+            <p><strong>Author:</strong> {{ ticket.author.username }}</p>
+            <p><strong>Priority:</strong> <span class="badge bg-{{ 'danger' if ticket.priority == 'High' else ('warning' if ticket.priority == 'Medium' else 'secondary') }}">{{ ticket.priority }}</span></p>
+            <p><strong>Category:</strong> {{ ticket.category }}</p>
+            <p><strong>Created:</strong> {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            <hr>
+            <p>{{ ticket.description }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>Replies</h5>
+        </div>
+        <div class="card-body">
+            {% for reply in replies %}
+                <div class="mb-3 border-bottom pb-3">
+                    <p><strong>{{ reply.commentor_name }}</strong> <span class="text-muted small">({{ reply.role }}) - {{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span></p>
+                    <p>{{ reply.message }}</p>
+                </div>
+            {% else %}
+                <p class="text-center">No replies yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Add a Reply</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('ticket_detail', ticket_id=ticket.id) }}">
+                <div class="mb-3">
+                    <textarea class="form-control" name="message" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Reply</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role == 'admin' %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5>Admin: Update Ticket</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket.id) }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="Open" {% if ticket.status == 'Open' %}selected{% endif %}>Open</option>
+                            <option value="In Progress" {% if ticket.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Resolved" {% if ticket.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="Low" {% if ticket.priority == 'Low' %}selected{% endif %}>Low</option>
+                            <option value="Medium" {% if ticket.priority == 'Medium' %}selected{% endif %}>Medium</option>
+                            <option value="High" {% if ticket.priority == 'High' %}selected{% endif %}>High</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Update Ticket</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

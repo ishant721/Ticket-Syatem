@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Total Tickets</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ total_tickets }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header">Open Tickets</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ open_tickets }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Resolved Tickets</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ resolved_tickets }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Your Tickets</h2>
+        <a href="{{ url_for('create_ticket') }}" class="btn btn-primary">Create New Ticket</a>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                        <tr>
+                            <td>{{ ticket.id }}</td>
+                            <td>{{ ticket.title }}</td>
+                            <td><span class="badge bg-{{ 'danger' if ticket.priority == 'High' else ('warning' if ticket.priority == 'Medium' else 'secondary') }}">{{ ticket.priority }}</span></td>
+                            <td><span class="badge bg-{{ 'success' if ticket.status == 'Closed' else 'primary' }}">{{ ticket.status }}</span></td>
+                            <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td><a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" class="btn btn-sm btn-info">View</a></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">You have not created any tickets yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="jumbotron text-center">
+    <h1 class="display-4">Welcome to the Support Ticket System</h1>
+    <p class="lead">Your one-stop solution for managing support requests.</p>
+    <hr class="my-4">
+    
+    {% if current_user.is_authenticated %}
+        <p>Go to your dashboard to view and manage your tickets.</p>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}" role="button">Go to Dashboard</a>
+        {% if current_user.role == 'admin' %}
+            <a class="btn btn-info btn-lg" href="{{ url_for('admin') }}" role="button">Admin Panel</a>
+        {% endif %}
+    {% else %}
+        <p>Please log in to create and manage your support tickets.</p>
+        <p>Don't have an account? Register now!</p>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}" role="button">Login</a>
+        <a class="btn btn-secondary btn-lg" href="{{ url_for('register') }}" role="button">Register</a>
+    {% endif %}
+</div>
+{% endblock %}
