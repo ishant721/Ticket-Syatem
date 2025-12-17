@@ -1,12 +1,11 @@
 import random
 from faker import Faker
-from app import app, db
-from models import User, Ticket, Reply
+from models import db, User, Ticket, Reply
 from werkzeug.security import generate_password_hash
 
 fake = Faker()
 
-def seed_data():
+def seed_data(app):
     with app.app_context():
         # Clean up existing data
         db.drop_all()
@@ -72,6 +71,3 @@ def seed_data():
         
         db.session.commit()
         print("Database seeded with 1 admin, 10 users, and several tickets and replies.")
-
-if __name__ == '__main__':
-    seed_data()

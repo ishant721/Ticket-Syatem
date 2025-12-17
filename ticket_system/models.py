@@ -41,6 +41,7 @@ class Ticket(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     replies = db.relationship('Reply', backref='ticket', lazy=True , cascade="all, delete")
+    history = db.relationship('TicketHistory', backref='ticket', lazy=True, cascade="all, delete")
     
 
     def __repr__(self):
@@ -56,3 +57,16 @@ class Reply(db.Model):
 
     def __repr__(self):
         return f'<Reply {self.id} for Ticket {self.ticket_id}>'
+
+class TicketHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
+    field_changed = db.Column(db.String(50), nullable=False)
+    old_value = db.Column(db.String(150), nullable=False)
+    new_value = db.Column(db.String(150), nullable=False)
+    changed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    changed_by = db.relationship('User', backref='ticket_history_entries', lazy=True)
+
+    def __repr__(self):
+        return f'<TicketHistory {self.id} for Ticket {self.ticket_id}>'

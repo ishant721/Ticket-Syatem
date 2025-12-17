@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block head %}
+  {{ super() }}
+  {# You can add admin-specific head content here if needed #}
+{% endblock %}
+
+{% block body %}
+  <div class="container-fluid">
+    {# Flask-Admin will render its main content here #}
+    {% block main %}{% endblock %}
+  </div>
+{% endblock %}
+
+{% block content %}
+  {# We override the content block from base.html to prevent Flask-Admin from trying to render its content directly there #}
+  <div class="container-fluid">
+    {% block messages %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    {% endblock %}
+
+    {% if admin_view and admin_view.name %}
+      <h3 class="mb-3">{{ admin_view.name }}</h3>
+    {% endif %}
+
+    {% if admin_view and admin_view.endpoint != 'admin_panel.index' %}
+      <div class="btn-group mb-3">
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.index') }}">Back to Admin Home</a>
+      </div>
+    {% endif %}
+
+    {% block page_body %}
+      {# This is where Flask-Admin puts the main content for its views #}
+    {% endblock %}
+  </div>
+{% endblock %}
+
+{# Remove Flask-Admin's default home button and branding #}
+{% block brand %}{% endblock %}
+{% block nav_links %}{% endblock %}
+{% block access_control %}{% endblock %}

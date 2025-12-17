@@ -35,6 +35,25 @@
 
     <div class="card mt-4">
         <div class="card-header">
+            <h5>Ticket History</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for entry in history %}
+                    <li class="list-group-item">
+                        <strong>{{ entry.changed_by.username }}</strong> changed <strong>{{ entry.field_changed }}</strong>
+                        from "<strong>{{ entry.old_value }}</strong>" to "<strong>{{ entry.new_value }}</strong>"
+                        <span class="text-muted small d-block">{{ entry.changed_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </li>
+                {% else %}
+                    <li class="list-group-item">No ticket history.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
             <h5>Add a Reply</h5>
         </div>
         <div class="card-body">
