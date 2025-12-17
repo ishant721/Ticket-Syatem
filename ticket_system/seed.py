@@ -1,6 +1,6 @@
 import random
 from faker import Faker
-from models import db, User, Ticket, Reply
+from models import db, User, Ticket, Reply, TicketHistory
 from werkzeug.security import generate_password_hash
 
 fake = Faker()
@@ -69,5 +69,37 @@ def seed_data(app):
                 )
                 db.session.add(reply)
         
+        # Create Ticket History
+        for ticket in tickets:
+            # Change status
+            for _ in range(random.randint(0, 2)):
+                old_status = ticket.status
+                new_status = random.choice(['Open', 'In Progress', 'Resolved'])
+                if old_status != new_status:
+                    history = TicketHistory(
+                        ticket=ticket,
+                        field_changed='Status',
+                        old_value=old_status,
+                        new_value=new_status,
+                        changed_by=admin_user
+                    )
+                    db.session.add(history)
+                    ticket.status = new_status
+        
+            # Change priority
+            for _ in range(random.randint(0, 2)):
+                old_priority = ticket.priority
+                new_priority = random.choice(['Low', 'Medium', 'High'])
+                if old_priority != new_priority:
+                    history = TicketHistory(
+                        ticket=ticket,
+                        field_changed='Priority',
+                        old_value=old_priority,
+                        new_value=new_priority,
+                        changed_by=admin_user
+                    )
+                    db.session.add(history)
+                    ticket.priority = new_priority
+
         db.session.commit()
         print("Database seeded with 1 admin, 10 users, and several tickets and replies.")

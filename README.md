@@ -1,39 +1,45 @@
-# Ticket System (Flask Demo App Idea #2)
+# Ticket System (Flask Demo App)
 
 ## Project Description
-This is a Flask-based Issue/Support Ticket Management System designed to demonstrate end-to-end backend thinking with clear role separation (User/Admin). It's a mini Zendesk/Freshdesk application that allows users to raise and track support tickets, while administrators can manage these tickets, update their status, and approve new user registrations.
+This is a Flask-based Issue/Support Ticket Management System designed to demonstrate end-to-end backend thinking with clear role separation (User/Admin). It's a mini Zendesk/Freshdesk application that allows users to raise and track support tickets, while administrators can manage tickets, users, and system data through a comprehensive admin panel.
 
-## Core Features (MVP)
+## Core Features
 
 ### 🔐 Authentication & Authorization
-*   **Login / Register:** Users can create accounts and log in.
-*   **OTP Verification during Registration:** New users must verify their email with a One-Time Password (OTP) during registration.
-*   **Admin Approval for New Users:** After email verification, new user accounts require approval from an administrator before they can log in.
-*   **Forgot Password:** Users can reset their password via email.
-*   **Role-based Access:** Differentiates between 'user' and 'admin' roles, restricting certain functionalities to administrators.
+*   **Login / Register:** Users can create accounts and log in. Passwords are confirmed during registration.
+*   **OTP Verification during Registration:** New users must verify their email with a One-Time Password (OTP).
+*   **Admin Approval for New Users:** After email verification, new user accounts require approval from an administrator.
+*   **Forgot Password:** Users can reset their password via an email link.
+*   **Role-based Access:** Differentiates between 'user' and 'admin' roles.
 
 ### 🎫 Ticket Management
 *   **Create Ticket:** Users can submit new support tickets with a title, description, category, and priority.
 *   **Track Ticket Status:** Users can view the status of their submitted tickets.
-*   **Update Ticket Status/Priority (Admin):** Administrators can update the status (Open, In Progress, Resolved) and priority (Low, Medium, High) of any ticket.
+*   **Update Ticket Status/Priority (Admin):** Administrators can update the status (Open, In Progress, Resolved) and priority (Low, Medium, High).
+*   **Ticket History:** All changes to a ticket's status and priority are logged and viewable on the ticket detail page.
 
 ### 💬 Communication
-*   **Admin Replies:** Administrators can post replies to tickets.
-*   **User Follow-up Messages:** Users can add follow-up messages to their tickets.
+*   **Ticket Replies:** Users and admins can post replies to tickets.
 
 ### 📊 Dashboards
-*   **User Dashboard:** Displays a user's submitted tickets along with a summary of their total, open, and resolved tickets.
-*   **Admin Dashboard:** Provides an overview of all tickets in the system, including total, open, resolved, and high-priority ticket counts.
+*   **User Dashboard:** Displays a user's submitted tickets with a summary of total, open, and resolved tickets.
+*   **Admin Dashboard:** A custom dashboard showing an overview of all tickets, with filtering and search capabilities.
+
+### ⚙️ Admin Panel
+*   **Full CRUD Operations:** Administrators have full Create, Read, Update, and Delete capabilities for Users, Tickets, Replies, and Ticket History.
+*   **Password Management:** Admins can set or change user passwords, which are securely hashed.
+*   **Custom Views:** The admin panel provides customized views for managing different models, with search, filtering, and sorting options.
 
 ## Tech Stack
 *   **Flask:** Web framework.
+*   **Flask-Admin:** For the administrative interface.
 *   **SQLAlchemy:** ORM for database interactions.
 *   **SQLite:** Database used for development.
 *   **Jinja2:** Templating engine.
-*   **Bootstrap:** Frontend framework for responsive UI.
+*   **Bootstrap:** Frontend framework.
 *   **Flask-Login:** User session management.
-*   **Flask-Mail:** For sending emails (e.g., OTP, password reset links).
-*   **ItsDangerous:** For secure token generation (e.g., password reset tokens).
+*   **Flask-Mail:** For sending emails.
+*   **ItsDangerous:** For secure token generation.
 *   **Faker:** For generating test data.
 
 ## Setup Instructions
@@ -58,24 +64,21 @@ source venv/bin/activate
 pip install -r ticket_system/requirements.txt
 ```
 
-### 4. Initialize and Seed the Database
-To set up the database with initial admin and user data, including sample tickets:
-```bash
-python ticket_system/seed.py
-```
-**Note:** Running `seed.py` will **delete all existing data** in the database and recreate it.
-
-### 5. Configure Email Settings (for OTP and Password Reset)
-Edit `ticket_system/app.py` and replace the placeholder values for `MAIL_USERNAME` and `MAIL_PASSWORD` with your actual email credentials. For Gmail, you might need to generate an App Password:
+### 4. Configure Email Settings (for OTP and Password Reset)
+Edit `ticket_system/app.py` and replace the placeholder values for `MAIL_USERNAME` and `MAIL_PASSWORD` with your email credentials. For Gmail, an App Password is required.
 ```python
-# Flask-Mail configuration - REPLACE WITH YOUR CREDENTIALS
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'  # Replace with your email
-app.config['MAIL_PASSWORD'] = 'your_app_password'  # Replace with your app password
-app.config['MAIL_DEFAULT_SENDER'] = 'your_email@gmail.com' # Replace with your email
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your_app_password'
+app.config['MAIL_DEFAULT_SENDER'] = 'your_email@gmail.com'
 ```
+
+### 5. Initialize and Seed the Database
+To set up the database with initial admin and user data, including sample tickets, run the `flask seed` command.
+```bash
+# Make sure your virtual environment is activated
+PYTHONPATH=. flask --app ticket_system/app.py seed
+```
+**Note:** This command will **delete all existing data** and recreate it.
 
 ### 6. Run the Application
 ```bash
@@ -91,49 +94,20 @@ The application will be accessible at `http://127.0.0.1:7000/`.
 *   **Password:** `adminpass`
 
 ### Regular Users
-*   **Username:** (randomly generated by `seed.py`)
-*   **Email:** (randomly generated by `seed.py`)
-*   **Password:** `password` (for all seeded regular users)
-
-To view all seeded user credentials, run:
-```bash
-python -c "from ticket_system.app import app; from ticket_system.models import User; with app.app_context(): users = User.query.all(); [print(f'Username: {user.username}, Email: {user.email}, Role: {user.role}') for user in users]"
-```
-
-## How to Promote a User to Admin
-1.  Register a new user through the website (e.g., `newuser`).
-2.  Use the command-line script to promote them:
-    ```bash
-    python ticket_system/manage_users.py promote newuser
-    ```
+*   The seed script creates 10 regular users with random usernames and emails.
+*   The password for all seeded regular users is `password`.
+*   You can view and manage these users from the Admin Panel.
 
 ## Database Schema
 
 ### Users Table
-*   `id` (PK)
-*   `username` (Unique)
-*   `email` (Unique)
-*   `password` (Hashed)
-*   `role` (user/admin)
-*   `created_at`
-*   `is_active` (Admin approval status)
-*   `email_verified` (Email verification status)
-*   `otp` (Temporary storage for OTP)
+*   `id` (PK), `username`, `email`, `password` (Hashed), `role`, `created_at`, `is_active`, `email_verified`, `otp`
 
 ### Tickets Table
-*   `id` (PK)
-*   `title`
-*   `description`
-*   `category` (Tech / HR / General)
-*   `priority` (Low / Medium / High)
-*   `status` (Open / In Progress / Resolved)
-*   `user_id` (FK to Users)
-*   `created_at`
+*   `id` (PK), `title`, `description`, `category`, `priority`, `status`, `user_id` (FK), `created_at`
 
-### Ticket Replies Table
-*   `id` (PK)
-*   `ticket_id` (FK to Tickets)
-*   `commentor_name`
-*   `role`
-*   `message`
-*   `created_at`
+### Replies Table
+*   `id` (PK), `ticket_id` (FK), `commentor_name`, `role`, `message`, `created_at`
+
+### TicketHistory Table
+*   `id` (PK), `ticket_id` (FK), `field_changed`, `old_value`, `new_value`, `changed_by_id` (FK), `changed_at`

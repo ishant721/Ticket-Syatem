@@ -13,12 +13,19 @@ from dotenv import load_dotenv
 import logging
 from logging.handlers import RotatingFileHandler
 
-from flask_admin import Admin
+from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
+from wtforms.fields import PasswordField
 
 load_dotenv() # Load environment variables from .env file
 
 app = Flask(__name__)
+
+# Ensure the instance folder exists
+try:
+    os.makedirs(app.instance_path)
+except OSError:
+    pass
 app.config['SECRET_KEY'] = 'jhdgfhgsdGFYEWBFEY764TRGEWG73G78GBEWBYGRFQYG4UYRFEB784gr87fb4fc87'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'site.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -56,20 +63,67 @@ login_manager.login_view = 'login'
 login_manager.init_app(app)
 
 class MyModelView(ModelView):
-    base_template = 'admin/master.html'
     def is_accessible(self):
         return current_user.is_authenticated and current_user.role == 'admin'
 
     def inaccessible_callback(self, name, **kwargs):
-        # redirect to login page if user doesn't have access
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('login', next=request.url))
 
-admin = Admin(app, name='Support Ticket Admin', url='/admin_panel')
-admin.add_view(MyModelView(User, db.session))
-admin.add_view(MyModelView(Ticket, db.session))
-admin.add_view(MyModelView(Reply, db.session))
-admin.add_view(MyModelView(TicketHistory, db.session))
+class MyAdminIndexView(AdminIndexView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.role == 'admin'
+    
+    def inaccessible_callback(self, name, **kwargs):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('login', next=request.url))
+    
+    # Hide the "Home" link from the admin panel's navigation if needed, or point it elsewhere
+    # We set is_visible to True to make this main "Overview" link appear in the menu
+    def is_visible(self):
+        return True 
+
+class UserAdminView(MyModelView):
+    column_list = ('id', 'username', 'email', 'role', 'is_active', 'email_verified')
+    column_searchable_list = ('username', 'email')
+    column_filters = ('role', 'is_active', 'email_verified')
+    form_columns = ('username', 'email', 'role', 'is_active', 'email_verified', 'password')
+    form_overrides = {
+        'password': PasswordField
+    }
+    form_widget_args = {
+        'password': {
+            'placeholder': 'Enter new password'
+        }
+    }
+
+    def on_model_change(self, form, model, is_created):
+        if form.password.data:
+            model.password = generate_password_hash(form.password.data)
+
+class TicketAdminView(MyModelView):
+    column_list = ('id', 'title', 'author', 'status', 'priority', 'created_at')
+    column_searchable_list = ('title', 'description')
+    column_filters = ('status', 'priority')
+    form_columns = ('title', 'description', 'status', 'priority', 'author')
+
+class ReplyAdminView(MyModelView):
+    column_list = ('id', 'ticket', 'commentor_name', 'role', 'created_at')
+    column_searchable_list = ('message',)
+
+class TicketHistoryAdminView(MyModelView):
+    column_list = ('id', 'ticket', 'field_changed', 'old_value', 'new_value', 'changed_at', 'changed_by')
+    can_edit = False
+    can_create = False
+    can_delete = False
+
+admin = Admin(app, name='Support Ticket Admin', url='/admin_panel', 
+              index_view=MyAdminIndexView(name='Overview', url='/admin_panel'))
+
+admin.add_view(UserAdminView(User, db.session))
+admin.add_view(TicketAdminView(Ticket, db.session))
+admin.add_view(ReplyAdminView(Reply, db.session))
+admin.add_view(TicketHistoryAdminView(TicketHistory, db.session))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -218,10 +272,16 @@ def register():
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
 
-        if not username or not email or not password:
+        if not username or not email or not password or not confirm_password:
             flash("All fields are required!", "danger")
             app.logger.warning('Registration attempt with missing fields.')
+            return redirect(url_for('register'))
+
+        if password != confirm_password:
+            flash("Passwords do not match!", "danger")
+            app.logger.warning('Registration attempt with non-matching passwords.')
             return redirect(url_for('register'))
 
         if len(password) < 6:
@@ -453,46 +513,46 @@ def approve_user(user_id):
     flash(f"User '{user.username}' has been approved and can now log in.", 'success')
     return redirect(url_for('pending_users'))
 
-# @app.cli.command('seed')
-# def seed_command():
-#     """Seeds the database with initial data."""
-#     seed_data(app)
-#     print("Database seeded!")
+@app.cli.command('seed')
+def seed_command():
+    """Seeds the database with initial data."""
+    seed_data(app)
+    print("Database seeded!")
 
-# @app.cli.command('create-admin')
-# def create_admin_command():
-#     """Creates a new admin user."""
-#     with app.app_context():
-#         username = input("Enter username for new admin: ")
-#         email = input("Enter email for new admin: ")
-#         password = input("Enter password for new admin: ")
+@app.cli.command('create-admin')
+def create_admin_command():
+    """Creates a new admin user."""
+    with app.app_context():
+        username = input("Enter username for new admin: ")
+        email = input("Enter email for new admin: ")
+        password = input("Enter password for new admin: ")
 
-#         if not username or not email or not password:
-#             print("Username, email, and password cannot be empty.")
-#             return
+        if not username or not email or not password:
+            print("Username, email, and password cannot be empty.")
+            return
 
-#         existing_user = User.query.filter_by(username=username).first()
-#         if existing_user:
-#             print(f"User with username '{username}' already exists.")
-#             return
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            print(f"User with username '{username}' already exists.")
+            return
 
-#         existing_email = User.query.filter_by(email=email).first()
-#         if existing_email:
-#             print(f"User with email '{email}' already exists.")
-#             return
+        existing_email = User.query.filter_by(email=email).first()
+        if existing_email:
+            print(f"User with email '{email}' already exists.")
+            return
 
-#         hashed_password = generate_password_hash(password)
-#         new_admin = User(
-#             username=username,
-#             email=email,
-#             password=hashed_password,
-#             role='admin',
-#             is_active=True,
-#             email_verified=True
-#         )
-#         db.session.add(new_admin)
-#         db.session.commit()
-#         print(f"Admin user '{username}' created successfully!")
+        hashed_password = generate_password_hash(password)
+        new_admin = User(
+            username=username,
+            email=email,
+            password=hashed_password,
+            role='admin',
+            is_active=True,
+            email_verified=True
+        )
+        db.session.add(new_admin)
+        db.session.commit()
+        print(f"Admin user '{username}' created successfully!")
 
 with app.app_context():
     db.create_all()
